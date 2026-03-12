@@ -1,0 +1,12 @@
+{
+    "dependencies": [
+        "."
+    ],
+    "graphs": {
+        "chat_agent": "./src/simple_chat.py:agent",
+        "weather_agent": "./src/weather_agent.py:agent"
+    },
+    "env": ".env",
+    "python_version": "3.13",
+    "image_distro": "wolfi"
+}
