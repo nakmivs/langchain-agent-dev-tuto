@@ -15,6 +15,7 @@ dependencies = [
     "rich>=14.3.3",
     "volcengine>=1.0.216",
     "volcengine-python-sdk[ark]>=5.0.15",
+    "aiohttp>=3.11.0",
 ]
 
 [tool.uv.workspace]
