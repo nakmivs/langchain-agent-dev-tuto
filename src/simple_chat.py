@@ -4,7 +4,7 @@ from src.llm import get_llm
 
 
 agent = create_agent(
-    model=get_llm(),
+    model=get_llm(reasoning_effort="medium"),
     system_prompt="You are a helpful assistant.",
 )
 # print(agent.invoke({"messages": [{"role": "user", "content": "Hello, how are you?"}]}))

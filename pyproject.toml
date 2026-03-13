@@ -8,9 +8,13 @@ dependencies = [
     "dashscope>=1.25.13",
     "deepagents>=0.4.9",
     "langchain>=1.2.11",
+    "langchain-community>=0.4.1",
     "langchain-openai>=1.1.11",
     "langchain-qwq>=0.3.4",
     "langgraph-cli[inmem]>=0.4.15",
+    "rich>=14.3.3",
+    "volcengine>=1.0.216",
+    "volcengine-python-sdk[ark]>=5.0.15",
 ]
 
 [tool.uv.workspace]
