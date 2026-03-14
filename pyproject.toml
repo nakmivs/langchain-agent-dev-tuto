@@ -16,6 +16,9 @@ dependencies = [
     "volcengine>=1.0.216",
     "volcengine-python-sdk[ark]>=5.0.15",
     "aiohttp>=3.11.0",
+    "psycopg[binary,pool]>=3.3.3",
+    "langgraph>=1.1.2",
+    "langgraph-checkpoint-postgres>=3.0.4",
 ]
 
 [tool.uv.workspace]
