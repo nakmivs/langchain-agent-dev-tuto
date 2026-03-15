@@ -207,3 +207,6 @@ __marimo__/
 
 
 .langgraph_api/
+
+# GPG private key (for git-crypt)
+gpg-private-key.asc
