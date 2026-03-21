@@ -31,3 +31,108 @@
 - 理解 ToolMessage 的结构和 tool_call_id 的配对机制
 ============================================================
 """
+from pydantic import BaseModel, Field
+from rich import print
+from langchain.tools import tool
+from langchain.messages import HumanMessage, ToolMessage, AIMessage
+from langgraph.graph import StateGraph, START, END
+from langchain.messages import AnyMessage
+from typing_extensions import TypedDict, Annotated
+import operator
+import asyncio
+
+from llm import get_llm
+
+
+class MessageState(TypedDict):
+    messages: Annotated[list[AnyMessage], operator.add]
+
+
+class WeatherTool(BaseModel):
+    """查询城市天气"""
+    city: str = Field(description="城市名称")
+
+class Forecast(BaseModel):
+    """查询天气预报"""
+    city: str = Field(description="城市名称")
+    date_num: str = Field(default=1, max=7, min=1,description="未来几天。默认为1，最小为1，最大为7")
+
+@tool(args_schema=WeatherTool)
+async def get_weather(city: str) -> str:
+    """查询城市天气"""
+    return f"城市{city}的天气是晴天，气温26度，东风3级。"
+
+@tool(args_schema=Forecast)
+async def get_forecast(city: str, date_num: int=1) -> str:
+    """获取未来几天的天气"""
+    return f"{city} 未来{date_num}天多云转晴。"
+
+tools_book = {
+    "get_weather": get_weather,
+    "get_forecast": get_forecast
+}
+
+
+# model = get_llm(provider="dashscope", model="qwen3.5-flash")
+
+# model_with_tools = model.bind_tools([get_weather])
+
+# response = model_with_tools.invoke([HumanMessage(content="北京今天天气怎么样？")])
+
+
+async def llm_call(state: MessageState) -> MessageState:
+    model = get_llm(provider="dashscope", model="qwen3.5-flash")
+    model_with_tools = model.bind_tools([get_weather, get_forecast])
+    response = model_with_tools.invoke(state["messages"])
+    return {"messages": [response]}
+
+async def tool_node(state: MessageState) -> MessageState:
+    messages = state["messages"]
+    last_message = messages[-1]
+    tool_messages = []
+    tasks = []
+    for tool_call in last_message.tool_calls:
+        tasks.append(tools_book[tool_call["name"]].ainvoke(input=tool_call["args"]))
+    results = await asyncio.gather(*tasks)
+    for (tc, result) in zip(last_message.tool_calls, results):
+        tool_messages.append(ToolMessage(content=result, tool_call_id=tc["id"]))
+    return {"messages": tool_messages}
+
+async def tool_router(state: MessageState) -> str:
+    last_message = state["messages"][-1]
+    # 下面之所以用getattr，AIMessage 抽象后的 tool_calls 不一定总是稳定存在或为列表
+    tool_calls = getattr(last_message, "tool_calls", []) or []
+    if tool_calls:
+        return "tool_node"
+    return "end"
+
+
+
+graph_builder = StateGraph(state_schema=MessageState)
+
+graph_builder.add_node("llm_call", llm_call)
+graph_builder.add_node("tool_node", tool_node)
+
+graph_builder.add_conditional_edges(
+    "llm_call",
+    tool_router,
+    {
+        "tool_node": "tool_node",
+        "end": END
+    }
+)
+graph_builder.add_edge("tool_node", "llm_call")
+graph_builder.add_edge(START, "llm_call")
+
+
+agent = graph_builder.compile()
+
+
+if __name__ == "__main__":
+    async def main():
+        response = await agent.ainvoke({
+            "messages": [HumanMessage(content="今天成都未来3天气咋样?")]
+        })
+        print(response)
+
+    asyncio.run(main())
