@@ -55,7 +55,7 @@ class WeatherTool(BaseModel):
 class Forecast(BaseModel):
     """查询天气预报"""
     city: str = Field(description="城市名称")
-    date_num: str = Field(default=1, max=7, min=1,description="未来几天。默认为1，最小为1，最大为7")
+    date_num: int = Field(default=1, ge=1, le=7,description="未来几天。默认为1，最小为1，最大为7")
 
 @tool(args_schema=WeatherTool)
 async def get_weather(city: str) -> str:
@@ -83,7 +83,7 @@ tools_book = {
 async def llm_call(state: MessageState) -> MessageState:
     model = get_llm(provider="dashscope", model="qwen3.5-flash")
     model_with_tools = model.bind_tools([get_weather, get_forecast])
-    response = model_with_tools.invoke(state["messages"])
+    response = await model_with_tools.ainvoke(state["messages"])
     return {"messages": [response]}
 
 async def tool_node(state: MessageState) -> MessageState:
