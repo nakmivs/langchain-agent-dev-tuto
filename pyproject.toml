@@ -23,6 +23,9 @@ dependencies = [
     "lab>=8.9",
     "tavily-python>=0.7.23",
     "markdownify>=1.2.2",
+    "pydantic-settings>=2.13.1",
+    "langchain-deepseek>=1.0.1",
+    "openai>=2.26.0",
 ]
 
 [tool.uv.workspace]
